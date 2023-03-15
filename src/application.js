@@ -1,7 +1,7 @@
 import { string, setLocale } from 'yup';
+import i18next from 'i18next';
 import onChange from 'on-change';
 import render from './view';
-import i18next from 'i18next';
 import ru from './locales/ru';
 
 const app = () => {
@@ -32,10 +32,7 @@ const app = () => {
     feedback: document.querySelector('.feedback'),
   };
 
-  const watchedState = onChange(
-    initialState,
-    render(elements, i18nextInstance)
-  );
+  const watchedState = onChange(initialState, render(elements, i18nextInstance));
 
   elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
