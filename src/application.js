@@ -1,54 +1,100 @@
-import { string, setLocale } from 'yup';
+import axios from 'axios';
 import i18next from 'i18next';
 import onChange from 'on-change';
+import { string, setLocale } from 'yup';
+import { uniqueId } from 'lodash';
 import render from './view';
 import ru from './locales/ru';
+import parse from './parser';
+
+const getAllOrigins = (url) => {
+  const allOriginsLink = 'https://allorigins.hexlet.app/get';
+  const preparedURL = new URL(allOriginsLink);
+  preparedURL.searchParams.set('disableCache', 'true');
+  preparedURL.searchParams.set('url', url);
+  return axios.get(preparedURL);
+};
+
+const fulfilHttpRequest = (url) => {
+  getAllOrigins(url)
+    .then((response) => {
+      const responseData = response.data.contents;
+      return Promise.resolve(responseData);
+    })
+    .catch(() => Promise.reject(new Error('networkError')));
+};
 
 const app = () => {
   const i18nextInstance = i18next.createInstance();
-  i18nextInstance.init({
-    lng: 'ru',
-    debug: false,
-    resources: {
-      ru,
-    },
-  });
-
-  setLocale({
-    mixed: { notOneOf: 'errors.alreadyExists' },
-    string: { url: 'errors.invalidUrl' },
-  });
-
-  const initialState = {
-    form: {
-      errors: [],
-    },
-    feeds: [],
-  };
-
-  const elements = {
-    form: document.querySelector('.rss-form'),
-    urlInput: document.querySelector('#url-input'),
-    feedback: document.querySelector('.feedback'),
-  };
-
-  const watchedState = onChange(initialState, render(elements, i18nextInstance));
-
-  elements.form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const url = formData.get('url').trim();
-    const schema = string().url().notOneOf(initialState.feeds);
-
-    schema
-      .validate(url)
-      .then(() => {
-        watchedState.feeds.push(url);
-      })
-      .catch((error) => {
-        watchedState.form.errors = [error];
+  i18nextInstance
+    .init({
+      lng: 'ru',
+      debug: false,
+      resources: {
+        ru,
+      },
+    })
+    .then((translation) => {
+      setLocale({
+        mixed: { notOneOf: 'errors.alreadyExists' },
+        string: { url: 'errors.invalidUrl' },
       });
-  });
+
+      const initialState = {
+        form: {
+          errors: [],
+        },
+        feeds: [],
+        posts: [],
+      };
+
+      const elements = {
+        form: document.querySelector('.rss-form'),
+        urlInput: document.querySelector('#url-input'),
+        feedback: document.querySelector('.feedback'),
+        submitButton: document.querySelector('button[type="submit"]'),
+        containerPosts: document.querySelector('.posts'),
+        containerFeeds: document.querySelector('.feeds'),
+      };
+
+      const watchedState = onChange(
+        initialState,
+        render(initialState, elements, translation),
+      );
+
+      elements.form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const url = formData.get('url').trim();
+        const urlList = watchedState.feeds.map(({ link }) => link);
+        const schema = string().url().notOneOf(urlList);
+
+        schema
+          .validate(url)
+          .then(() => {
+            fulfilHttpRequest(url);
+          })
+          .then((contents) => parse(contents))
+          .then((parsedData) => {
+            const feedId = uniqueId();
+            const feed = {
+              id: feedId,
+              title: parsedData.feed.title,
+              description: parsedData.feed.description,
+              link: url,
+            };
+            watchedState.feeds.push(feed);
+
+            const posts = parsedData.posts.map((post) => ({
+              feedId,
+              id: uniqueId(),
+              ...post,
+            }));
+            watchedState.posts = watchedState.posts.concat(posts);
+          })
+          .catch((error) => watchedState.form.errors.push(error));
+      });
+    });
 };
 
 export default app;
