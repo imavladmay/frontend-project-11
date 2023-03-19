@@ -1,16 +1,22 @@
 const renderPosts = (state, elements, translation) => {
+  elements.containerPosts.innerHTML = '';
+
   const firstDiv = document.createElement('div');
   firstDiv.classList.add('card', 'border-0');
+  elements.containerPosts.append(firstDiv);
 
   const secondDiv = document.createElement('div');
   secondDiv.classList.add('card-body');
+  firstDiv.append(secondDiv);
 
   const h2 = document.createElement('h2');
   h2.classList.add('card-title', 'h4');
   h2.textContent = translation('posts');
+  secondDiv.append(h2);
 
   const list = document.createElement('ul');
   list.classList.add('list-group', 'border-0', 'rounded-0');
+  firstDiv.append(list);
 
   state.posts.forEach((post) => {
     const listItem = document.createElement('li');
@@ -22,40 +28,33 @@ const renderPosts = (state, elements, translation) => {
       'border-0',
       'border-end-0',
     );
+    list.append(listItem);
 
     const a = document.createElement('a');
-    a.classList.add('fw-bold');
     a.href = post.link;
+    a.classList.add('fw-bold');
+    a.setAttribute('data-id', post.id);
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
-    a.setAttribute('data-id', post.id);
     a.textContent = post.title;
-
-    // const button = document.createElement('button');
-    // button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-    // button.type = 'button';
-    // button.setAttribute('data-id', post.id);
-    // button.setAttribute('data-bs-toggle', 'modal');
-    // button.setAttribute('data-bs-target', '#modal');
-    // button.textContent = translate('preview');
-
     listItem.append(a);
-    list.append(listItem);
   });
-
-  elements.containerPosts.append(firstDiv, secondDiv, list);
 };
 
 const renderFeeds = (state, elements, translation) => {
+  elements.containerFeeds.innerHTML = '';
+
   const firstDiv = document.createElement('div');
   firstDiv.classList.add('card', 'border-0');
 
   const secondDiv = document.createElement('div');
   secondDiv.classList.add('card-body');
+  firstDiv.append(secondDiv);
 
   const h2 = document.createElement('h2');
   h2.classList.add('card-title', 'h4');
   h2.textContent = translation('feeds');
+  secondDiv.append(h2);
 
   const list = document.createElement('ul');
   list.classList.add('list-group', 'border-0', 'rounded-0');
@@ -76,7 +75,14 @@ const renderFeeds = (state, elements, translation) => {
     list.append(listItem);
   });
 
-  elements.containerFeeds.append(firstDiv, secondDiv, list);
+  elements.containerFeeds.append(firstDiv, list);
+  elements.feedback.textContent = '';
+  elements.urlInput.classList.remove('is-invalid');
+  elements.feedback.classList.remove('text-danger');
+  elements.feedback.classList.add('text-success');
+  elements.feedback.textContent = translation('validUrl');
+  elements.form.reset();
+  elements.urlInput.focus();
 };
 
 const renderErrors = (elements, error, translation) => {
@@ -91,11 +97,11 @@ const render = (state, elements, translation) => (path, value) => {
     case 'form.errors':
       renderErrors(elements, value, translation);
       break;
-    case 'feeds':
+    case 'posts':
       renderPosts(state, elements, translation);
+      break;
+    case 'feeds':
       renderFeeds(state, elements, translation);
-      elements.form.reset();
-      elements.urlInput.focus();
       break;
     default:
       throw new Error(`Unexpected application state: ${path}: ${value}`);

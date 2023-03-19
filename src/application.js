@@ -7,7 +7,7 @@ import render from './view';
 import ru from './locales/ru';
 import parse from './parser';
 
-const getAllOrigins = (url) => {
+const fulfilHttpRequest = (url) => {
   const allOriginsLink = 'https://allorigins.hexlet.app/get';
   const preparedURL = new URL(allOriginsLink);
   preparedURL.searchParams.set('disableCache', 'true');
@@ -15,14 +15,9 @@ const getAllOrigins = (url) => {
   return axios.get(preparedURL);
 };
 
-const fulfilHttpRequest = (url) => {
-  getAllOrigins(url)
-    .then((response) => {
-      const responseData = response.data.contents;
-      return Promise.resolve(responseData);
-    })
-    .catch(() => Promise.reject(new Error('networkError')));
-};
+const getAllOrigins = (url) => fulfilHttpRequest(url)
+  .then((response) => Promise.resolve(response.data.contents))
+  .catch(() => Promise.reject(new Error('errors.networkError')));
 
 const app = () => {
   const i18nextInstance = i18next.createInstance();
@@ -57,10 +52,7 @@ const app = () => {
         containerFeeds: document.querySelector('.feeds'),
       };
 
-      const watchedState = onChange(
-        initialState,
-        render(initialState, elements, translation),
-      );
+      const watchedState = onChange(initialState, render(initialState, elements, translation));
 
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -71,10 +63,8 @@ const app = () => {
 
         schema
           .validate(url)
-          .then(() => {
-            fulfilHttpRequest(url);
-          })
-          .then((contents) => parse(contents))
+          .then(() => getAllOrigins(url))
+          .then((data) => parse(data))
           .then((parsedData) => {
             const feedId = uniqueId();
             const feed = {
@@ -92,7 +82,9 @@ const app = () => {
             }));
             watchedState.posts = watchedState.posts.concat(posts);
           })
-          .catch((error) => watchedState.form.errors.push(error));
+          .catch((error) => {
+            watchedState.form.errors = [error, ...watchedState.form.errors];
+          });
       });
     });
 };

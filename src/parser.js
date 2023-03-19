@@ -4,7 +4,7 @@ export default (data) => {
   const xmlDocument = parser.parseFromString(data, 'application/xml');
   const errorNode = xmlDocument.querySelector('parsererror');
   if (errorNode) {
-    return Promise.reject(new Error('parsingError'));
+    return Promise.reject(new Error('errors.parsingError'));
   }
 
   const channel = xmlDocument.querySelector('channel');
