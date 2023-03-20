@@ -19,6 +19,32 @@ const getAllOrigins = (url) => fulfilHttpRequest(url)
   .then((response) => Promise.resolve(response.data.contents))
   .catch(() => Promise.reject(new Error('errors.networkError')));
 
+const addPosts = (feedId, items, state) => {
+  const posts = items.map((item) => ({
+    feedId,
+    id: uniqueId(),
+    ...item,
+  }));
+  state.posts = state.posts.concat(posts);
+};
+
+const getNewPosts = (state, timeout = 5000) => {
+  const promises = state.feeds.map(({ id, link }) => getAllOrigins(link)
+    .then((response) => {
+      const { posts } = parse(response.data.contents);
+      const linksToAddedPosts = state.posts.map((post) => post.link);
+      const newPosts = posts.filter((post) => !linksToAddedPosts.includes(post.link));
+      if (newPosts.length > 0) {
+        addPosts(id, newPosts, state);
+      }
+      return Promise.resolve();
+    }));
+
+  Promise.allSettled(promises).then(() => {
+    setTimeout(() => getNewPosts(state), timeout);
+  });
+};
+
 const app = () => {
   const i18nextInstance = i18next.createInstance();
   i18nextInstance
@@ -54,6 +80,8 @@ const app = () => {
 
       const watchedState = onChange(initialState, render(initialState, elements, translation));
 
+      getNewPosts(watchedState);
+
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -75,12 +103,7 @@ const app = () => {
             };
             watchedState.feeds.push(feed);
 
-            const posts = parsedData.posts.map((post) => ({
-              feedId,
-              id: uniqueId(),
-              ...post,
-            }));
-            watchedState.posts = watchedState.posts.concat(posts);
+            addPosts(feedId, parsedData.posts, watchedState);
           })
           .catch((error) => {
             watchedState.form.errors = [error, ...watchedState.form.errors];
