@@ -67,6 +67,10 @@ const app = () => {
         },
         feeds: [],
         posts: [],
+        uiState: {
+          IDsViewedPosts: new Set(),
+          idOfPostRelatedToModal: null,
+        },
       };
 
       const elements = {
@@ -76,6 +80,13 @@ const app = () => {
         submitButton: document.querySelector('button[type="submit"]'),
         containerPosts: document.querySelector('.posts'),
         containerFeeds: document.querySelector('.feeds'),
+        viewPostButton: document.querySelector('button[type="button"]'),
+        modal: {
+          modalElement: document.querySelector('.modal'),
+          title: document.querySelector('.modal-title'),
+          description: document.querySelector('.modal-body'),
+          fullArticleBtn: document.querySelector('.full-article'),
+        },
       };
 
       const watchedState = onChange(initialState, render(initialState, elements, translation));
@@ -108,6 +119,19 @@ const app = () => {
           .catch((error) => {
             watchedState.form.errors = [error, ...watchedState.form.errors];
           });
+      });
+
+      elements.modal.modalElement.addEventListener('shown.bs.modal', (e) => {
+        const id = e.relatedTarget.getAttribute('data-id');
+        watchedState.uiState.IDsViewedPosts.add(id);
+        watchedState.uiState.idOfPostRelatedToModal = id;
+      });
+
+      elements.containerPosts.addEventListener('click', (e) => {
+        const { id } = e.target.dataset;
+        if (id) {
+          watchedState.uiState.IDsViewedPosts.add(id);
+        }
       });
     });
 };
