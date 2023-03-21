@@ -63,6 +63,7 @@ const app = () => {
 
       const initialState = {
         form: {
+          processState: 'filling',
           errors: [],
         },
         feeds: [],
@@ -102,7 +103,10 @@ const app = () => {
 
         schema
           .validate(url)
-          .then(() => getAllOrigins(url))
+          .then(() => {
+            watchedState.form.processState = 'sending';
+            return getAllOrigins(url);
+          })
           .then((data) => parse(data))
           .then((parsedData) => {
             const feedId = uniqueId();
@@ -118,6 +122,9 @@ const app = () => {
           })
           .catch((error) => {
             watchedState.form.errors = [error, ...watchedState.form.errors];
+          })
+          .finally(() => {
+            watchedState.form.processState = 'filling';
           });
       });
 

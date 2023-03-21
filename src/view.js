@@ -107,6 +107,19 @@ const renderModalWindow = (state, elements, postId) => {
   elements.modal.fullArticleBtn.href = post.link;
 };
 
+const handleProcessState = (elements, processState) => {
+  switch (processState) {
+    case 'filling':
+      elements.submitButton.disabled = false;
+      break;
+    case 'sending':
+      elements.submitButton.disabled = true;
+      break;
+    default:
+      throw new Error(`Unknown process state: ${processState}`);
+  }
+};
+
 const render = (state, elements, translation) => (path, value) => {
   switch (path) {
     case 'form.errors':
@@ -123,6 +136,9 @@ const render = (state, elements, translation) => (path, value) => {
       break;
     case 'uiState.IDsViewedPosts':
       renderPosts(state, elements, translation);
+      break;
+    case 'form.processState':
+      handleProcessState(elements, value);
       break;
     default:
       throw new Error(`Unexpected application state: ${path}: ${value}`);
