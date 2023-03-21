@@ -6,6 +6,7 @@ export default {
       alreadyExists: 'RSS уже существует',
       parsingError: 'Ресурс не содержит валидный RSS',
       networkError: 'Ошибка сети',
+      mustNotBeEmpty: 'Не должно быть пустым',
     },
     feeds: 'Фиды',
     posts: 'Посты',

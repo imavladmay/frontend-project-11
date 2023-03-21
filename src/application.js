@@ -57,7 +57,7 @@ const app = () => {
     })
     .then((translation) => {
       setLocale({
-        mixed: { notOneOf: 'errors.alreadyExists' },
+        mixed: { notOneOf: 'errors.alreadyExists', required: 'errors.mustNotBeEmpty' },
         string: { url: 'errors.invalidUrl' },
       });
 
@@ -98,7 +98,7 @@ const app = () => {
         const formData = new FormData(e.target);
         const url = formData.get('url').trim();
         const urlList = watchedState.feeds.map(({ link }) => link);
-        const schema = string().url().notOneOf(urlList);
+        const schema = string().required().url().notOneOf(urlList);
 
         schema
           .validate(url)
