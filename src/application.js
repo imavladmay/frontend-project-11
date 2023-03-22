@@ -4,7 +4,7 @@ import onChange from 'on-change';
 import { string, setLocale } from 'yup';
 import { uniqueId } from 'lodash';
 import render from './view';
-import ru from './locales/ru';
+import resources from './locales/index';
 import parse from './parser';
 
 const fulfilHttpRequest = (url) => {
@@ -51,13 +51,14 @@ const app = () => {
     .init({
       lng: 'ru',
       debug: false,
-      resources: {
-        ru,
-      },
+      resources,
     })
     .then((translation) => {
       setLocale({
-        mixed: { notOneOf: 'errors.alreadyExists', required: 'errors.mustNotBeEmpty' },
+        mixed: {
+          notOneOf: 'errors.alreadyExists',
+          required: 'errors.mustNotBeEmpty',
+        },
         string: { url: 'errors.invalidUrl' },
       });
 
