@@ -16,8 +16,10 @@ const fulfilHttpRequest = (url) => {
 };
 
 const getAllOrigins = (url) => fulfilHttpRequest(url)
-  .then((response) => Promise.resolve(response.data.contents))
-  .catch(() => Promise.reject(new Error('errors.networkError')));
+  .then((response) => response.data.contents)
+  .catch(() => {
+    throw new Error('errors.networkError');
+  });
 
 const addPosts = (feedId, items, state) => {
   const posts = items.map((item) => ({
@@ -29,20 +31,23 @@ const addPosts = (feedId, items, state) => {
 };
 
 const getNewPosts = (state, timeout = 5000) => {
-  const promises = state.feeds.map(({ id, link }) => getAllOrigins(link)
-    .then((response) => {
-      const { posts } = parse(response.data.contents);
-      const linksToAddedPosts = state.posts.map((post) => post.link);
-      const newPosts = posts.filter((post) => !linksToAddedPosts.includes(post.link));
-      if (newPosts.length > 0) {
-        addPosts(id, newPosts, state);
-      }
-      return Promise.resolve();
-    }));
+  const promises = state.feeds.map(({ link }) => fulfilHttpRequest(link));
 
-  Promise.allSettled(promises).then(() => {
-    setTimeout(() => getNewPosts(state), timeout);
-  });
+  Promise.allSettled(promises)
+    .then((results) => results
+      .filter((result) => result.status === 'fulfilled')
+      .forEach((promise) => {
+        const { posts } = parse(promise.value.data.contents);
+        const linksToAddedPosts = state.posts.map((post) => post.link);
+        const newPosts = posts.filter((post) => !linksToAddedPosts.includes(post.link));
+        if (newPosts.length > 0) {
+          newPosts.map((post) => ({ id: uniqueId(), ...post }));
+          state.posts = state.posts.concat(newPosts);
+        }
+      }))
+    .then(() => {
+      setTimeout(() => getNewPosts(state), timeout);
+    });
 };
 
 const app = () => {
@@ -65,12 +70,12 @@ const app = () => {
       const initialState = {
         form: {
           processState: 'filling',
-          errors: [],
+          errors: null,
         },
         feeds: [],
         posts: [],
         uiState: {
-          IDsViewedPosts: new Set(),
+          idsViewedPosts: new Set(),
           idOfPostRelatedToModal: null,
         },
       };
@@ -122,7 +127,7 @@ const app = () => {
             addPosts(feedId, parsedData.posts, watchedState);
           })
           .catch((error) => {
-            watchedState.form.errors = [error, ...watchedState.form.errors];
+            watchedState.form.errors = error;
           })
           .finally(() => {
             watchedState.form.processState = 'filling';
@@ -131,14 +136,14 @@ const app = () => {
 
       elements.modal.modalElement.addEventListener('shown.bs.modal', (e) => {
         const id = e.relatedTarget.getAttribute('data-id');
-        watchedState.uiState.IDsViewedPosts.add(id);
+        watchedState.uiState.idsViewedPosts.add(id);
         watchedState.uiState.idOfPostRelatedToModal = id;
       });
 
       elements.containerPosts.addEventListener('click', (e) => {
         const { id } = e.target.dataset;
         if (id) {
-          watchedState.uiState.IDsViewedPosts.add(id);
+          watchedState.uiState.idsViewedPosts.add(id);
         }
       });
     });

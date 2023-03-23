@@ -32,7 +32,7 @@ const renderPosts = (state, elements, translation) => {
 
     const a = document.createElement('a');
     a.href = post.link;
-    a.classList.add(state.uiState.IDsViewedPosts.has(post.id) ? 'link-secondary' : 'fw-bold');
+    a.classList.add(state.uiState.idsViewedPosts.has(post.id) ? 'link-secondary' : 'fw-bold');
     a.setAttribute('data-id', post.id);
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
@@ -97,7 +97,7 @@ const renderErrors = (elements, error, translation) => {
   elements.feedback.textContent = '';
   elements.urlInput.classList.add('is-invalid');
   elements.feedback.classList.add('text-danger');
-  elements.feedback.textContent = translation(error[0].message);
+  elements.feedback.textContent = translation(error.message);
 };
 
 const renderModalWindow = (state, elements, postId) => {
@@ -134,7 +134,7 @@ const render = (state, elements, translation) => (path, value) => {
     case 'uiState.idOfPostRelatedToModal':
       renderModalWindow(state, elements, value);
       break;
-    case 'uiState.IDsViewedPosts':
+    case 'uiState.idsViewedPosts':
       renderPosts(state, elements, translation);
       break;
     case 'form.processState':

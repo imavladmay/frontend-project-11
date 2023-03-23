@@ -1,10 +1,10 @@
 export default (data) => {
   const parser = new DOMParser();
 
-  const xmlDocument = parser.parseFromString(data, 'application/xml');
+  const xmlDocument = parser.parseFromString(data, 'text/xml');
   const errorNode = xmlDocument.querySelector('parsererror');
   if (errorNode) {
-    return Promise.reject(new Error('errors.parsingError'));
+    throw new Error('errors.parsingError');
   }
 
   const channel = xmlDocument.querySelector('channel');
@@ -20,5 +20,5 @@ export default (data) => {
     return { title: postTitle, description: postDescription, link };
   });
 
-  return Promise.resolve({ feed, posts });
+  return { feed, posts };
 };
